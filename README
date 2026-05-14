@@ -1,0 +1,18 @@
+# RewriteAI 🪄
+
+A minimalist macOS menu bar utility that uses Google Gemini (or local LLMs) to rewrite selected text instantly using system-wide hotkeys.
+
+## Features
+- **Global Context:** Works in any app (TextEdit, Chrome, Slack) via Accessibility APIs.
+- **AI Engines:** Supports Gemini 3 Flash and Gemini 1.5.
+- **Privacy First:** Uses a secure Shield Window to prevent UI interference during processing.
+- **Customizable:** Securely store your own API keys in the app settings.
+
+## Getting Started
+1. Clone the repo.
+2. Open `RewriteAI.xcodeproj` in Xcode 17+.
+3. Build and Run.
+4. **Important:** Enable Accessibility permissions in *System Settings > Privacy & Security* to allow text replacement.
+
+## License
+MIT License - See [LICENSE](LICENSE) for details.

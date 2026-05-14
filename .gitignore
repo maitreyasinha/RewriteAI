@@ -1,0 +1,17 @@
+# Xcode
+#
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+
+# Personal/User Data
+#
+xcuserdata/
+*.xcbkptlist
+xcschememanagement.plist
+
+# macOS
+#
+.DS_Store

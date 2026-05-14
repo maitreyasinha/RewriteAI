@@ -10,9 +10,33 @@ import Cocoa
 
 class TextService {
     static let shared = TextService()
+    
+    // Create a variable to "Remember" where the text should go
+    private var lastFocusedElement: AXUIElement?
+
+    func captureFocus() {
+        let systemWide = AXUIElementCreateSystemWide()
+        var focused: AnyObject?
+        if AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focused) == .success {
+            self.lastFocusedElement = (focused as! AXUIElement)
+        }
+    }
+
+    func replaceText(with newText: String) {
+        guard let element = self.lastFocusedElement else {
+            // Fallback to Cmd+V if focus was lost
+            return
+        }
+        // This "Injects" the text into the exact box you grabbed earlier
+        // Even if the user clicked away to another window!
+        AXUIElementSetAttributeValue(element, kAXSelectedTextAttribute as CFString, newText as CFTypeRef)
+        self.lastFocusedElement = nil // Clear for next time
+    }
+    
+    
     func getSelectedText() -> String? {
             let pasteboard = NSPasteboard.general
-            let originalContent = pasteboard.string(forType: .string)
+//            let originalContent = pasteboard.string(forType: .string)
         
         // 1. Clear clipboard and simulate Cmd+C
                 pasteboard.clearContents()
@@ -25,17 +49,17 @@ class TextService {
         
         // 3. Restore original content if needed (optional)
         // pasteboard.setString(originalContent ?? "", forType: .string)
+        print("Selected Text")
+        print(selectedText ?? "Unknown Selected Text")
         return selectedText
 }
-
-    func replaceSelectedText(with newText: String) {
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.setString(newText, forType: .string)
-            
-            // Simulate Cmd+V
-            self.simulateKey(keyCode: 0x09, flags: .maskCommand) // 0x09 is 'V'
-        }
+    
+    private func simulatePasteFallback(with newText: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(newText, forType: .string)
+        self.simulateKey(keyCode: 0x09, flags: .maskCommand) // Cmd+V
+    }
 
     private func simulateKey(keyCode: CGKeyCode, flags: CGEventFlags) {
             let source = CGEventSource(stateID: .hidSystemState)

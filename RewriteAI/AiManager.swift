@@ -11,6 +11,28 @@ import Observation
 enum AIEngine {
     case gemini, gpt
 }
+enum Style {
+    case Professional, Funny, Summarize
+}
+
+enum AIError: Error, LocalizedError {
+    case requestFailed(message: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .requestFailed(let message): return message
+        }
+    }
+}
+
+// Helper to decode Google's specific error JSON
+struct GeminiErrorResponse: Decodable {
+    let error: GeminiErrorDetails
+    struct GeminiErrorDetails: Decodable {
+        let message: String
+    }
+}
+
 
 @Observable
 class AIManager {
@@ -19,33 +41,36 @@ class AIManager {
         
     private let gemini = GeminiService()
     
-    func process(engine: AIEngine) {
-        let isAccessible = checkAccessibility()
-        print("Accessibility result is  \(isAccessible)...")
-        print("Triggering rewrite with \(engine)...")
-//        var isProcessing = false
+    func process(engine: AIEngine, prompt: Style) {
+        let _ = checkAccessibility()
         
+        // Prevent re-entrancy/crashes from overlapping calls
+        if isProcessing { return }
+       
+        TextService.shared.captureFocus()
         guard let selectedText = TextService.shared.getSelectedText() else { return }
-        
-        isProcessing = true
-//        print(selectedText)
-        // 1. We will eventually 'Copy' the text here
-        // 2. We will call the API
-        // 3. We will 'Paste' the result
-        
-        // Let's test if it's working with a simple print
-        Task {
+        HUDManager.shared.show()
+        print("running the code")
+        Task { @MainActor in
+            isProcessing = true
+             // Show the "Thinking" Bubble
+            NSCursor.pointingHand.set() // Tactile feedback
+            
             do {
                 let rewrittenText = try await gemini.rewrite(selectedText)
-                await MainActor.run {
-                    TextService.shared.replaceSelectedText(with: rewrittenText)
-                    self.isProcessing = false
-                }
+                // Replaces text in the original app
+                TextService.shared.replaceText(with: rewrittenText)
+                // Always clean up
+                isProcessing = false
+                HUDManager.shared.hide()
             } catch {
-                await MainActor.run {
-                    self.isProcessing = false
-                }
+                isProcessing = false
+                HUDManager.shared.hide()
+                print(error)
+                showErrorDialog(title: "Error", message: error.localizedDescription)
+                print("Function proceeded till here")
             }
+            
         }
     }
     
@@ -53,6 +78,42 @@ class AIManager {
         // This is where your API logic will live in Step 3
         let mockResult = "This is a polished version of your text."
         print("AI Result: \(mockResult)")
+    }
+    
+    @MainActor
+    private func showShield() {
+        NSCursor.busy.set()
+    }
+
+    @MainActor
+    private func hideShield() {
+        NSCursor.arrow.set()
+    }
+    
+}
+
+extension AIManager {
+    @MainActor
+    func showErrorDialog(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "OK")
+        alert.window.level = .floating
+        alert.runModal() // This pauses the app until they click OK
+    }
+}
+
+extension NSCursor {
+    static var busy: NSCursor {
+        // Using the "progress" or "wait" symbols from macOS Tahoe
+        let config = NSImage.SymbolConfiguration(pointSize: 24, weight: .regular)
+        let image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: "Busy")?
+            .withSymbolConfiguration(config)
+        
+        // We have to convert the SF Symbol to a standard image to use it as a cursor
+        return NSCursor(image: image ?? NSCursor.arrow.image, hotSpot: NSPoint(x: 12, y: 12))
     }
 }
 
