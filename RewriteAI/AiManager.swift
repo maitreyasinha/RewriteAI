@@ -50,7 +50,6 @@ class AIManager {
         TextService.shared.captureFocus()
         guard let selectedText = TextService.shared.getSelectedText() else { return }
         HUDManager.shared.show()
-        print("running the code")
         Task { @MainActor in
             isProcessing = true
              // Show the "Thinking" Bubble
@@ -66,9 +65,7 @@ class AIManager {
             } catch {
                 isProcessing = false
                 HUDManager.shared.hide()
-                print(error)
                 showErrorDialog(title: "Error", message: error.localizedDescription)
-                print("Function proceeded till here")
             }
             
         }
@@ -77,7 +74,6 @@ class AIManager {
     private func callMockAPI(engine: AIEngine) {
         // This is where your API logic will live in Step 3
         let mockResult = "This is a polished version of your text."
-        print("AI Result: \(mockResult)")
     }
     
     @MainActor
@@ -120,6 +116,5 @@ extension NSCursor {
 func checkAccessibility() -> Bool {
     let options: [String: Any] = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
     let status = AXIsProcessTrustedWithOptions(options as CFDictionary)
-    print("Accessibility Status: \(status)")
     return status
 }

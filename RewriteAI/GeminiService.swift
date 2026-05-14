@@ -42,12 +42,9 @@ class GeminiService {
 
             let (data, response) = try await URLSession.shared.data(for: request)
             if let httpResponse = response as? HTTPURLResponse {
-                print("DEBUG: Status Code = \(httpResponse.statusCode)")
                 
                 if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
-                    if let errorString = String(data: data, encoding: .utf8) {
-                        print("DEBUG: API Error Body: \(errorString)")
-                    }
+            
                     // 1. Try to parse Google's error JSON
                     if let errorResponse = try? JSONDecoder().decode(GeminiErrorResponse.self, from: data) {
                         throw AIError.requestFailed(message: errorResponse.error.message)

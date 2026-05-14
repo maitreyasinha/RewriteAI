@@ -36,21 +36,14 @@ class TextService {
     
     func getSelectedText() -> String? {
             let pasteboard = NSPasteboard.general
-//            let originalContent = pasteboard.string(forType: .string)
-        
-        // 1. Clear clipboard and simulate Cmd+C
                 pasteboard.clearContents()
                 self.simulateKey(keyCode: 0x08, flags: .maskCommand) // 0x08 is 'C'
         
-        // 2. Wait a tiny bit for the OS to finish the copy
+        
                 Thread.sleep(forTimeInterval: 0.2)
         
         let selectedText = pasteboard.string(forType: .string)
         
-        // 3. Restore original content if needed (optional)
-        // pasteboard.setString(originalContent ?? "", forType: .string)
-        print("Selected Text")
-        print(selectedText ?? "Unknown Selected Text")
         return selectedText
 }
     

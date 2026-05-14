@@ -10,10 +10,6 @@ import SwiftUI
 @main
 struct RewriteAIApp: App {
     
-    init(){
-        print("Hello, the app is starting.. !!")
-    }
-    
     @State private var aiManager = AIManager()
     @State private var isProcessing = false
     var body: some Scene {
