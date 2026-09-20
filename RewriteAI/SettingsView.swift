@@ -7,40 +7,50 @@
 
 import SwiftUI
 
+/// Settings view for configuring API keys
 struct SettingsView: View {
-    // This automatically saves/loads from the Mac's internal storage
-    @AppStorage("gemini_api_key") private var apiKey: String = ""
+    @AppStorage("gemini_api_key") private var geminiApiKey: String = ""
+    @AppStorage("openai_api_key") private var openAIApiKey: String = ""
     
     var body: some View {
-            Form {
-                Section(header: Text("API Configuration")) {
-                    SecureField("Gemini API Key", text: $apiKey)
-                        .textFieldStyle(.roundedBorder)
-                    
-                    Text("Get your key at [Google AI Studio](https://aistudio.google.com/)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+        Form {
+            Section(header: Text("Google Gemini API")) {
+                SecureField("Gemini API Key", text: $geminiApiKey)
+                    .textFieldStyle(.roundedBorder)
+                
+                Text("Get your key at [Google AI Studio](https://aistudio.google.com/)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
-            .padding(20)
-            .frame(width: 400, height: 150)
-            .onAppear {
-                       makeWindowFloat()
-                   }
+            
+            Section(header: Text("OpenAI API (GPT-4o)")) {
+                SecureField("OpenAI API Key", text: $openAIApiKey)
+                    .textFieldStyle(.roundedBorder)
+                
+                Text("Get your key at [OpenAI Platform](https://platform.openai.com/api-keys)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
+        .padding(20)
+        .frame(width: 420, height: 230)
+        .onAppear {
+            makeWindowFloat()
+        }
+    }
     
     private func makeWindowFloat() {
-            // 1. Force the app to the front so the window isn't born in the background
-            NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate(ignoringOtherApps: true)
 
-            // 2. Find the window that contains this view
-            // We look for windows that are currently visible and belong to our app
-            for window in NSApplication.shared.windows {
-                // Standard SwiftUI settings windows usually have "Settings" or the App Name in the title
-                if window.isVisible && (window.title == "Settings" || window.frame.width == 350) {
-                    window.level = .floating // Keeps it above TextEdit/Chrome
-                    window.center()          // Optional: Keeps it centered
-                }
+        for window in NSApplication.shared.windows {
+            if window.isVisible && (window.title == "Settings" || window.frame.width == 420) {
+                window.level = .floating
+                window.center()
             }
         }
+    }
+}
+
+#Preview {
+    SettingsView()
 }

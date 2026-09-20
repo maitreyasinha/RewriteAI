@@ -9,32 +9,44 @@ import SwiftUI
 
 @main
 struct RewriteAIApp: App {
-    
     @State private var aiManager = AIManager()
-    @State private var isProcessing = false
+    
     var body: some Scene {
-        // This is your Clipy-style menu bar icon
-        MenuBarExtra{
+        MenuBarExtra {
+            // Gemini Options
             Menu("Rewrite with Gemini") {
-                Button("Professional") {aiManager.process(engine: .gemini, prompt: .Professional)}
-                Button("Funny") {aiManager.process(engine: .gemini, prompt: .Funny)}
-                Button("Summarize") {aiManager.process(engine: .gemini, prompt: .Summarize)}
+                ForEach(Style.allCases) { style in
+                    Button(style.rawValue) {
+                        aiManager.process(engine: .gemini, prompt: style)
+                    }
                 }
-                
+            }
             
-            Button("Rewrite Selection (GPT-5)") {aiManager.process(engine: .gpt, prompt: .Summarize)}
-                    Divider()
-            // The modern, error-free way:
+            // OpenAI GPT-4o Options
+            Menu("Rewrite with GPT-4o") {
+                ForEach(Style.allCases) { style in
+                    Button(style.rawValue) {
+                        aiManager.process(engine: .gpt, prompt: style)
+                    }
+                }
+            }
+            
+            Divider()
+            
             SettingsLink {
                 Text("Settings…")
             }
             
-            Button("Quit") { NSApplication.shared.terminate(nil) }
+            Button("Quit") {
+                NSApplication.shared.terminate(nil)
+            }
+            .keyboardShortcut("q")
+            
         } label: {
-            // 2. The Menu Bar Icon (The "View" where the modifier lives)
             Image(systemName: aiManager.isProcessing ? "ellipsis.circle.fill" : "sparkles")
                 .symbolEffect(.pulse, isActive: aiManager.isProcessing)
-        }        // This is the "Blueprint" for your settings window
+        }
+        
         Settings {
             SettingsView()
         }
