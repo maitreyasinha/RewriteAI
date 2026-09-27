@@ -27,7 +27,7 @@ private struct GeminiErrorResponse: Decodable {
     }
 }
 
-// MARK: - Gemini AIService Implementation
+	// MARK: - Gemini AIService Implementation
 
 /// Implementation of AIService protocol for Google Gemini REST API
 class GeminiService: AIService {
@@ -38,28 +38,32 @@ class GeminiService: AIService {
         UserDefaults.standard.string(forKey: "gemini_api_key")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
     
-    private let endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent"
+    private let endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
 
     func rewrite(_ text: String, style: Style) async throws -> String {
         guard !apiKey.isEmpty else {
             throw AIError.missingAPIKey(providerName: providerName)
         }
         
-        guard let url = URL(string: "\(endpoint)?key=\(apiKey)") else {
+        guard let url = URL(string: endpoint) else {
             throw AIError.requestFailed(message: "Invalid Gemini endpoint URL.")
         }
         
-        let promptText = "\(style.promptInstruction) Return ONLY the final rewritten text without quote marks or introductory remarks: \(text)"
+        let promptText = "\(style.promptInstruction)\n\nReturn ONLY the final rewritten text without quote marks or introductory remarks:\n\(text)"
         
         let body: [String: Any] = [
             "contents": [[
                 "parts": [["text": promptText]]
-            ]]
+            ]],
+            "generationConfig": [
+                "temperature": 0.7
+            ]
         ]
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
         let (data, response) = try await URLSession.shared.data(for: request)

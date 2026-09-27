@@ -8,7 +8,7 @@
 import Foundation
 import Cocoa
 
-/// Service handling target app focus capture, text selection via Cmd+C, and text injection
+/// Service handling target app focus capture, text selection via AXUIElement or Cmd+C, and text injection
 class TextService {
     static let shared = TextService()
     
@@ -16,23 +16,35 @@ class TextService {
 
     /// Captures the currently active UI element (e.g. text field in Notes, Chrome, Slack)
     func captureFocus() {
-        let systemWide = AXUIElementCreateSystemWide()
-        var focused: AnyObject?
-        if AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focused) == .success, let target = focused {
-            self.lastFocusedElement = (target as! AXUIElement)
+        if let focused = getFocusedUIElement() {
+            self.lastFocusedElement = focused
         }
     }
 
-    /// Reads the currently selected text by simulating Cmd+C and reading from NSPasteboard asynchronously
+    /// Reads currently selected text, attempting direct Accessibility API read first, with Cmd+C pasteboard fallback
     func getSelectedText() async -> String? {
+        // Attempt 1: Direct Accessibility API read from focused element
+        if let focusedElement = lastFocusedElement ?? getFocusedUIElement() {
+            var selectedValue: AnyObject?
+            let result = AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextAttribute as CFString, &selectedValue)
+            if result == .success, let text = selectedValue as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return text
+            }
+        }
+        
+        // Attempt 2: Fallback using Cmd+C simulation and pasteboard inspect
         let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
+        let initialChangeCount = pasteboard.changeCount
         
         // 0x08 is virtual key code for 'C'
         self.simulateKey(keyCode: 0x08, flags: .maskCommand)
         
-        // Non-blocking sleep giving macOS clipboard time to update
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        // Non-blocking sleep giving macOS clipboard time to process key event
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        
+        if pasteboard.changeCount != initialChangeCount {
+            return pasteboard.string(forType: .string)
+        }
         
         return pasteboard.string(forType: .string)
     }
@@ -50,6 +62,16 @@ class TextService {
         
         // Fallback for apps (like Electron or WebViews) that don't support direct AX text setting
         simulatePasteFallback(with: newText)
+    }
+
+    private func getFocusedUIElement() -> AXUIElement? {
+        let systemWide = AXUIElementCreateSystemWide()
+        var focused: AnyObject?
+        if AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focused) == .success,
+           let target = focused {
+            return (target as! AXUIElement)
+        }
+        return nil
     }
 
     private func simulatePasteFallback(with newText: String) {
