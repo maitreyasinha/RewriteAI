@@ -1,0 +1,20 @@
+# Environment variables
+.env
+
+# Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+ProxyService
+main
+
+# Delve debug binary
+__debug_bin*
+debug
+debug.test
+
+# IDE configs
+.idea/
+.DS_Store

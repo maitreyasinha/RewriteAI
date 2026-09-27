@@ -1,0 +1,6 @@
+{
+    "go.useLanguageServer": true,
+    "go.delveConfig": {
+        "debugAdapter": "dlv-dap"
+    }
+}
