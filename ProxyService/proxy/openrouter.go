@@ -15,12 +15,12 @@ import (
 const (
 	defaultModel             = "openrouter/free"
 	openRouterCompletionsURL = "https://openrouter.ai/api/v1/chat/completions"
-	openRouterReferer        = "https://macos-gemini-rewrite.local"
+	openRouterReferer        = "https://rewrite-ai-kappa.vercel.app"
+	openRouterTitle          = "RewriteAI"
 )
 
 var (
-	errUpstreamUnreachable = errors.New("upstream service timeout or unreachable")
-	errMalformedResponse   = errors.New("malformed response from model")
+	errMalformedResponse = errors.New("malformed response from model")
 )
 
 // OpenRouterRequest represents the chat completions payload sent to OpenRouter.
@@ -57,7 +57,7 @@ type UpstreamError struct {
 }
 
 func (e *UpstreamError) Error() string {
-	return fmt.Sprintf("upstream returned status %d", e.StatusCode)
+	return fmt.Sprintf("upstream returned status %d: %s", e.StatusCode, string(e.Body))
 }
 
 // buildSystemPrompt constructs the rewrite system instruction, tailoring tone if provided.
@@ -75,7 +75,10 @@ func estimateTokens(prompt, rewritten string) int64 {
 
 // callOpenRouter sends the completion request to OpenRouter and returns the parsed response.
 func callOpenRouter(ctx context.Context, model, prompt, tone string) (*ClientResponse, error) {
-	openRouterKey := os.Getenv("OPENROUTER_API_KEY")
+	openRouterKey := strings.TrimSpace(os.Getenv("OPENROUTER_API_KEY"))
+	if openRouterKey == "" {
+		return nil, errors.New("OPENROUTER_API_KEY environment variable is not configured on Vercel")
+	}
 
 	orBody := OpenRouterRequest{
 		Model: model,
@@ -97,10 +100,11 @@ func callOpenRouter(ctx context.Context, model, prompt, tone string) (*ClientRes
 	req.Header.Set("Authorization", "Bearer "+openRouterKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("HTTP-Referer", openRouterReferer)
+	req.Header.Set("X-Title", openRouterTitle)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, errUpstreamUnreachable
+		return nil, fmt.Errorf("upstream service unreachable: %w", err)
 	}
 	defer resp.Body.Close()
 

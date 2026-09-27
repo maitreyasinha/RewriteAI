@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const httpTimeout = 25 * time.Second
+const httpTimeout = 45 * time.Second
 
 // Shared HTTP client configured with connection pooling
 var client = &http.Client{
@@ -94,15 +94,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			w.Write(upErr.Body)
 			return
 		}
-		if errors.Is(err, errUpstreamUnreachable) {
-			writeJSONError(w, http.StatusBadGateway, "Upstream service timeout or unreachable")
-			return
-		}
 		if errors.Is(err, errMalformedResponse) {
 			writeJSONError(w, http.StatusBadGateway, "Malformed response from model")
 			return
 		}
-		writeJSONError(w, http.StatusInternalServerError, "Failed to create upstream request")
+		writeJSONError(w, http.StatusBadGateway, err.Error())
 		return
 	}
 
