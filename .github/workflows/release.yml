@@ -48,13 +48,15 @@ jobs:
 
           echo "Target flag: $TARGET_FLAG"
 
-          # Build and archive using Release scheme
+          # Build and archive using Release scheme with ad-hoc signing
           xcodebuild $TARGET_FLAG \
             -scheme RewriteAI \
             -configuration Release \
             -derivedDataPath build/DerivedData \
             -archivePath build/RewriteAI.xcarchive \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
             archive
 
       - name: Package .dmg with Applications shortcut
@@ -71,6 +73,14 @@ jobs:
           echo "Found app at: $APP_PATH"
           cp -R "$APP_PATH" build/dmg_root/
 
+          # Ensure the bundle has a valid ad-hoc signature with sealed resources
+          APP_NAME=$(basename "$APP_PATH")
+          echo "Signing app bundle ad-hoc..."
+          codesign --force --deep --sign - "build/dmg_root/$APP_NAME"
+
+          echo "Verifying bundle signature..."
+          codesign --verify --verbose=4 "build/dmg_root/$APP_NAME"
+
           # Add link to /Applications for drag-and-drop installer
           ln -s /Applications build/dmg_root/Applications
 
@@ -81,6 +91,9 @@ jobs:
             -ov \
             -format UDZO \
             RewriteAI.dmg
+
+          # Sign the DMG image ad-hoc
+          codesign --sign - RewriteAI.dmg
 
           echo "Generated DMG:"
           ls -lh RewriteAI.dmg
