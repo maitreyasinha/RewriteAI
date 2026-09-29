@@ -1,0 +1,94 @@
+name: Release macOS App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release DMG
+    runs-on: macos-14 # macOS Sonoma on Apple Silicon (M1/M2/M3)
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: |
+          # Use default or installed Xcode
+          sudo xcode-select -s /Applications/Xcode_15.4.app || sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: Build macOS App Archive
+        run: |
+          # Resolve project or workspace file
+          if [ -d "RewriteAI.xcworkspace" ]; then
+            TARGET_FLAG="-workspace RewriteAI.xcworkspace"
+          elif [ -d "RewriteAI.xcodeproj" ]; then
+            TARGET_FLAG="-project RewriteAI.xcodeproj"
+          elif ls *.xcworkspace 1> /dev/null 2>&1; then
+            TARGET_FLAG="-workspace $(ls -d *.xcworkspace | head -n 1)"
+          else
+            TARGET_FLAG="-project $(ls -d *.xcodeproj | head -n 1)"
+          fi
+
+          echo "Target flag: $TARGET_FLAG"
+
+          # Build and archive (ad-hoc signing if no Developer ID cert installed on CI)
+          xcodebuild $TARGET_FLAG \
+            -scheme RewriteAI \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            -archivePath build/RewriteAI.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Package .dmg with Applications shortcut
+        run: |
+          mkdir -p build/dmg_root
+
+          # Locate built .app bundle inside the archive
+          APP_PATH=$(find build/RewriteAI.xcarchive/Products/Applications -name "*.app" -maxdepth 1 | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: .app file not found in archive"
+            exit 1
+          fi
+
+          echo "Found app at: $APP_PATH"
+          cp -R "$APP_PATH" build/dmg_root/
+
+          # Add link to /Applications so users can drag-and-drop
+          ln -s /Applications build/dmg_root/Applications
+
+          # Create compressed DMG image with native hdiutil
+          hdiutil create \
+            -volname "RewriteAI" \
+            -srcfolder build/dmg_root \
+            -ov \
+            -format UDZO \
+            RewriteAI.dmg
+
+          echo "Generated DMG:"
+          ls -lh RewriteAI.dmg
+
+      - name: Create GitHub Release and Upload DMG
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name || inputs.tag_name }}
+          tag_name: ${{ github.ref_name || inputs.tag_name }}
+          files: RewriteAI.dmg
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
