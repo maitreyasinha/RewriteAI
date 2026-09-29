@@ -7,6 +7,6 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/download", "destination": "https://github.com/maitreyasinha/RewriteAI/releases/latest/download/<YOUR_APP>.dmg" }
+    { "source": "/download", "destination": "https://github.com/maitreyasinha/RewriteAI/releases/latest/download/RewriteAI.dmg" }
   ]
 }
