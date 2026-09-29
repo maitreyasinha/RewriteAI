@@ -17,7 +17,7 @@ permissions:
 jobs:
   build-and-release:
     name: Build & Release DMG
-    runs-on: macos-14 # macOS Sonoma on Apple Silicon (M1/M2/M3)
+    runs-on: macos-14 # Apple Silicon M-series runner on GitHub Actions
 
     steps:
       - name: Checkout Repository
@@ -25,26 +25,26 @@ jobs:
 
       - name: Select Xcode Version
         run: |
-          # Use default or installed Xcode
           sudo xcode-select -s /Applications/Xcode_15.4.app || sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
 
       - name: Build macOS App Archive
         run: |
-          # Resolve project or workspace file
-          if [ -d "RewriteAI.xcworkspace" ]; then
-            TARGET_FLAG="-workspace RewriteAI.xcworkspace"
+          # Locate project or workspace
+          if [ -d "App/RewriteAI.xcworkspace" ]; then
+            TARGET_FLAG="-workspace App/RewriteAI.xcworkspace"
+          elif [ -d "App/RewriteAI.xcodeproj" ]; then
+            TARGET_FLAG="-project App/RewriteAI.xcodeproj"
           elif [ -d "RewriteAI.xcodeproj" ]; then
             TARGET_FLAG="-project RewriteAI.xcodeproj"
-          elif ls *.xcworkspace 1> /dev/null 2>&1; then
-            TARGET_FLAG="-workspace $(ls -d *.xcworkspace | head -n 1)"
           else
-            TARGET_FLAG="-project $(ls -d *.xcodeproj | head -n 1)"
+            PROJ_PATH=$(find . -maxdepth 2 -name "*.xcodeproj" | head -n 1)
+            TARGET_FLAG="-project $PROJ_PATH"
           fi
 
           echo "Target flag: $TARGET_FLAG"
 
-          # Build and archive (ad-hoc signing if no Developer ID cert installed on CI)
+          # Build and archive using Release scheme
           xcodebuild $TARGET_FLAG \
             -scheme RewriteAI \
             -configuration Release \
@@ -67,10 +67,10 @@ jobs:
           echo "Found app at: $APP_PATH"
           cp -R "$APP_PATH" build/dmg_root/
 
-          # Add link to /Applications so users can drag-and-drop
+          # Add link to /Applications for drag-and-drop installer
           ln -s /Applications build/dmg_root/Applications
 
-          # Create compressed DMG image with native hdiutil
+          # Create compressed DMG image using native macOS hdiutil
           hdiutil create \
             -volname "RewriteAI" \
             -srcfolder build/dmg_root \
