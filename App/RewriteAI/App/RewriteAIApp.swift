@@ -16,8 +16,15 @@ struct RewriteAIApp: App {
             ContentView()
                 .environment(aiManager)
         } label: {
-            Image(systemName: aiManager.isProcessing ? "ellipsis.circle.fill" : "sparkles")
-                .symbolEffect(.pulse, isActive: aiManager.isProcessing)
+            if aiManager.isProcessing {
+                Image(systemName: "ellipsis.circle.fill")
+                    .symbolEffect(.pulse, isActive: true)
+            } else {
+                Image("MenuBarIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+            }
         }
         .menuBarExtraStyle(.window)
         
