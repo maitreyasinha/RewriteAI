@@ -39,10 +39,16 @@ struct RewriteAITests {
         #expect(result.contains("Hello World"))
     }
     
-    @Test func testAIManagerServiceFactoryDefaultsToGemini() {
+    @Test func testAIManagerServiceFactoryDefaultsToCustomEndpoint() {
         let manager = AIManager()
-        let service = manager.service(for: .gemini)
-        #expect(service.providerName == "Google Gemini")
+        let service = manager.service(for: .customEndpoint)
+        #expect(service.providerName == "Custom Endpoint")
+    }
+    
+    @Test func testCustomEndpointServiceRewrite() async throws {
+        let service = CustomEndpointService()
+        let result = try await service.rewrite("Hello world", style: .professional)
+        #expect(!result.isEmpty)
     }
     
     @Test @MainActor func testAIManagerCopyToClipboardAndClear() {

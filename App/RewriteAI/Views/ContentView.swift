@@ -9,10 +9,23 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AIManager.self) private var aiManager
+    @AppStorage("selected_engine") private var selectedEngineRaw: String = AIEngine.customEndpoint.rawValue
     @AppStorage("gemini_api_key") private var geminiApiKey: String = ""
+    @AppStorage("openai_api_key") private var openaiApiKey: String = ""
+    
+    private var selectedEngine: AIEngine {
+        AIEngine(rawValue: selectedEngineRaw) ?? .customEndpoint
+    }
     
     private var isApiKeySet: Bool {
-        !geminiApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        switch selectedEngine {
+        case .customEndpoint:
+            return true
+        case .gemini:
+            return !geminiApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .gpt:
+            return !openaiApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
     }
     
     var body: some View {
@@ -57,7 +70,7 @@ struct ContentView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.orange)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Gemini API Key Required")
+                        Text("\(selectedEngine.rawValue) API Key Required")
                             .font(.caption)
                             .bold()
                         Text("Add your key in Settings to begin rewriting.")
@@ -136,7 +149,7 @@ struct ContentView: View {
                 HStack(spacing: 8) {
                     ForEach(Style.allCases) { style in
                         Button(action: {
-                            aiManager.process(engine: .gemini, style: style)
+                            aiManager.process(engine: selectedEngine, style: style)
                         }) {
                             HStack(spacing: 4) {
                                 if aiManager.isProcessing && aiManager.selectedStyle == style {
@@ -161,7 +174,7 @@ struct ContentView: View {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Rewriting with Gemini...")
+                    Text("Rewriting with \(selectedEngine.rawValue)...")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Spacer()

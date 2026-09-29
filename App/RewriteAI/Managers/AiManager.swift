@@ -20,12 +20,14 @@ class AIManager {
     var selectedStyle: Style? = nil
     
     /// Service Provider Factory returning an implementation conforming to AIService protocol
-    func service(for engine: AIEngine = .gemini) -> AIService {
+    func service(for engine: AIEngine = .customEndpoint) -> AIService {
         switch engine {
         case .gemini:
             return GeminiService()
         case .gpt:
             return OpenAIService()
+        case .customEndpoint:
+            return CustomEndpointService()
         }
     }
     
@@ -53,10 +55,10 @@ class AIManager {
     
     /// Processes text rewrite flow and updates state for popover UI
     /// - Parameters:
-    ///   - engine: Selected AI Provider (defaults to .gemini)
+    ///   - engine: Selected AI Provider (defaults to .customEndpoint)
     ///   - style: Desired rewrite preset style (.professional, .funny, .summarize)
     @MainActor
-    func process(engine: AIEngine = .gemini, style: Style) {
+    func process(engine: AIEngine = .customEndpoint, style: Style) {
         guard !isProcessing else { return }
         selectedStyle = style
         errorMessage = nil
