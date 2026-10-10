@@ -13,7 +13,8 @@ import Foundation
 enum AIEngine: String, CaseIterable, Identifiable {
     case gemini = "Gemini"
     case gpt = "GPT-4o"
-    case customEndpoint = "Custom Endpoint"
+    case customEndpoint = "RewriteAI Cloud"
+    case appleIntelligence = "Apple Intelligence"
     
     var id: String { rawValue }
 }

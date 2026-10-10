@@ -19,7 +19,7 @@ struct SettingsView: View {
     
     private var isKeyConfigured: Bool {
         switch selectedEngine {
-        case .customEndpoint:
+        case .customEndpoint, .appleIntelligence:
             return true
         case .gemini:
             return !geminiApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -30,17 +30,22 @@ struct SettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Provider Picker
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("AI Provider")
                     .font(.headline)
-                
-                Picker("Provider", selection: $selectedEngineRaw) {
-                    ForEach(AIEngine.allCases) { engine in
-                        Text(engine.rawValue).tag(engine.rawValue)
+
+                HStack {
+                    Text("Provider")
+                    Spacer()
+
+                    Picker("Provider", selection: $selectedEngineRaw) {
+                        ForEach(AIEngine.allCases) { engine in
+                            Text(engine.rawValue).tag(engine.rawValue)
+                        }
                     }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
                 }
-                .pickerStyle(.segmented)
             }
             
             Divider()
@@ -52,7 +57,16 @@ struct SettingsView: View {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
-                        Text("Custom hosted endpoint at https://rewrite-ai-kappa.vercel.app/api. No API key required.")
+                        Text("Uses RewriteAI Cloud. No API key required.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                case .appleIntelligence:
+                    HStack {
+                        Image(systemName: "lock.shield.fill")
+                            .foregroundColor(.green)
+                        Text("Runs on-device using Apple Intelligence. No API key or network connection is required; it needs macOS 26 or later and Apple Intelligence enabled.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -110,21 +124,7 @@ struct SettingsView: View {
             Spacer(minLength: 0)
         }
         .padding(20)
-        .frame(width: 440, height: 200)
-        .onAppear {
-            makeWindowFloat()
-        }
-    }
-    
-    private func makeWindowFloat() {
-        NSApp.activate(ignoringOtherApps: true)
-
-        for window in NSApplication.shared.windows {
-            if window.isVisible && (window.title == "Settings" || window.frame.width == 440) {
-                window.level = .floating
-                window.center()
-            }
-        }
+        .frame(width: 480)
     }
 }
 

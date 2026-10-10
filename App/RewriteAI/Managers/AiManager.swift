@@ -28,6 +28,8 @@ class AIManager {
             return OpenAIService()
         case .customEndpoint:
             return CustomEndpointService()
+        case .appleIntelligence:
+            return AppleIntelligenceService()
         }
     }
     
@@ -119,10 +121,4 @@ class AIManager {
         selectedStyle = nil
     }
     
-    /// Opens Settings window
-    @MainActor
-    func openSettings() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
 }

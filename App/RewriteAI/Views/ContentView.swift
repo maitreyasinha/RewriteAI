@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AIManager.self) private var aiManager
+    @Environment(\.openWindow) private var openWindow
     @AppStorage("selected_engine") private var selectedEngineRaw: String = AIEngine.customEndpoint.rawValue
     @AppStorage("gemini_api_key") private var geminiApiKey: String = ""
     @AppStorage("openai_api_key") private var openaiApiKey: String = ""
@@ -19,7 +20,7 @@ struct ContentView: View {
     
     private var isApiKeySet: Bool {
         switch selectedEngine {
-        case .customEndpoint:
+        case .customEndpoint, .appleIntelligence:
             return true
         case .gemini:
             return !geminiApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -42,9 +43,9 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                Button(action: {
-                    aiManager.openSettings()
-                }) {
+                Button {
+                    openSettingsWindow()
+                } label: {
                     Image(systemName: "gearshape")
                         .font(.body)
                 }
@@ -79,7 +80,7 @@ struct ContentView: View {
                     }
                     Spacer()
                     Button("Settings") {
-                        aiManager.openSettings()
+                        openSettingsWindow()
                     }
                     .font(.caption)
                     .buttonStyle(.borderedProminent)
@@ -247,6 +248,11 @@ struct ContentView: View {
         }
     }
     
+    private func openSettingsWindow() {
+        openWindow(id: "settings")
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     private func iconForStyle(_ style: Style) -> String {
         switch style {
         case .professional:

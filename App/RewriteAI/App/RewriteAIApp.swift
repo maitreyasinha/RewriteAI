@@ -28,8 +28,10 @@ struct RewriteAIApp: App {
         }
         .menuBarExtraStyle(.window)
         
-        Settings {
+        Window("Settings", id: "settings") {
             SettingsView()
         }
+        .defaultSize(width: 480, height: 240)
+        .windowResizability(.contentSize)
     }
 }
